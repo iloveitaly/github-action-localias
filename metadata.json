@@ -1,0 +1,5 @@
+{
+  "description": "Setup localias domains on GitHub Actions",
+  "homepage": "https://github.com/iloveitaly/github-action-localias",
+  "keywords": ["localias", "github", "actions", "ssl"]
+}
