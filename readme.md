@@ -27,8 +27,9 @@ steps:
 5. Creates and configures NSS database for Chrome/Chromium
 6. Validates HTTPS setup with curl tests across all domains in `.localias.yml`
 
-
 ## Development Notes
+
+Getting this working was challenging:
 
 * You'll see an error message (with a typo) `not NSS security databases found` even if the NSS DB exists. This occurs
   even under `sudo -E` and it really shouldn't [because the directory it references definitely exists](https://github.com/smallstep/truststore/blob/d71bcdef66e239112d877b3e531e1011795efdf7/truststore_nss.go#L16).
