@@ -2,6 +2,8 @@
 
 This GitHub Action installs and configures [Localias](https://github.com/peterldowns/localias) to enable HTTPS domains for CI tests. It handles certificate installation and system configuration to ensure proper HTTPS functionality in testing environments.
 
+[This was extracted from this python repo](https://github.com/iloveitaly/python-starter-template), if you are looking for an example of how to integrate this into your project.
+
 ## Features
 
 - Installs and runs Localias as a daemon
