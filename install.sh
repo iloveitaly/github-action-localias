@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Adapted from: https://starship.rs/install.sh
 
-set -euo pipefail
+set -eu
 
 printf '\n'
 
