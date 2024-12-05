@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
+# Adapted from: https://starship.rs/install.sh
 
-set -eu
+set -euo pipefail
+
 printf '\n'
 
 BOLD="$(tput bold 2>/dev/null || printf '')"
