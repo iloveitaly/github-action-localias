@@ -2,6 +2,9 @@
 
 set -v
 
+# fail entire script if anything fails, including a pipe
+set -eo pipefail
+
 banner_echo() {
   printf "\n\033[0;36m%s   \033[0m\n" "$1"
 }
@@ -20,6 +23,12 @@ sudo localias start
 # file is normally located at: /root/.local/state/localias/caddy/pki/authorities/local/root.crt
 
 cert_location=$(sudo localias debug cert)
+
+if [ -z "$cert_location" ]; then
+  banner_echo "ERROR: Failed to get certificate location from localias debug cert command"
+  exit 1
+fi
+
 daemon_success=false
 
 for i in {1..5}; do
