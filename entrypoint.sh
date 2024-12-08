@@ -24,6 +24,7 @@ sudo localias start
 
 cert_location=$(sudo localias debug cert)
 
+# this can occur if there was an error installing localias
 if [ -z "$cert_location" ]; then
   banner_echo "ERROR: Failed to get certificate location from localias debug cert command"
   exit 1
@@ -47,6 +48,17 @@ for i in {1..5}; do
 done
 
 $daemon_success || exit 1
+
+banner_echo "Creating shared NSS DB..."
+# when this directory is properly configured, you should see the following files: cert9.db  key4.db  pkcs11.txt
+[ ! -d "$HOME/.pki/nssdb" ] && mkdir -p "$HOME/.pki/nssdb" && certutil -d sql:$HOME/.pki/nssdb -N --empty-password
+
+# https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
+banner_echo "Installing certificates for Chrome and others using shared NSS DB..."
+sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo localias debug cert)
+
+banner_echo "Installed certificates:"
+certutil -L -d sql:${HOME}/.pki/nssdb
 
 # localias (caddy) appends the self-signed certificate to /etc/ssl/certs/ca-certificates.crt
 # but the system is not refreshed, which causes curl and various other systems to *not* pick up on the new certificate
@@ -81,14 +93,3 @@ for test_domain in $test_domains; do
   done
   $curl_success || exit 1
 done
-
-banner_echo "Creating shared NSS DB..."
-# when this directory is properly configured, you should see the following files: cert9.db  key4.db  pkcs11.txt
-[ ! -d "$HOME/.pki/nssdb" ] && mkdir -p "$HOME/.pki/nssdb" && certutil -d sql:$HOME/.pki/nssdb -N --empty-password
-
-# https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
-banner_echo "Installing certificates for Chrome and others using shared NSS DB..."
-sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo localias debug cert)
-
-banner_echo "Installed certificates:"
-certutil -L -d sql:${HOME}/.pki/nssdb
