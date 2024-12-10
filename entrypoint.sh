@@ -97,5 +97,13 @@ for test_domain in $test_domains; do
   $curl_success || exit 1
 done
 
+pip install -y playwright
+playwright install chromium --only-shell
+for test_domain in $test_domains; do
+  banner_echo "Testing Chrome $test_domain..."
+  python "$GITHUB_ACTION_PATH/warm_playwright.py" "$test_domain"
+done
+pip uninstall -y playwright
+
 banner_echo "Tailing localias logs..."
-sudo tail -f /root/.local/state/localias/daemon.log &
+sudo tail -n 0 -f /root/.local/state/localias/daemon.log &
