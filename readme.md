@@ -16,9 +16,8 @@ This GitHub Action installs and configures [Localias](https://github.com/peterld
 
 ```yaml
 steps:
-  - uses: iloveitaly/github-actions-localias@master
+  - uses: iloveitaly/github-action-localias@master
 ```
-
 
 ## What it does
 

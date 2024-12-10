@@ -65,6 +65,9 @@ certutil -L -d sql:${HOME}/.pki/nssdb
 banner_echo "Refreshing system CA certs..."
 sudo update-ca-certificates --fresh
 
+# reset DNS, could cause issues with custom domains
+sudo systemctl restart systemd-resolved
+
 # certs are *not* installed by Caddy in the right location by default
 # specifically, we know this fixes `curl` so it respects our self-signed SSL certificates
 # banner_echo "Installing locally signed cert"
@@ -93,3 +96,6 @@ for test_domain in $test_domains; do
   done
   $curl_success || exit 1
 done
+
+# display logs in the background
+sudo tail -f /root/.local/state/localias/daemon.log &
