@@ -97,5 +97,5 @@ for test_domain in $test_domains; do
   $curl_success || exit 1
 done
 
-# display logs in the background
+banner_echo "Tailing localias logs..."
 sudo tail -f /root/.local/state/localias/daemon.log &
