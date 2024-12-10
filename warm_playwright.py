@@ -3,7 +3,15 @@ import time
 from playwright.sync_api import sync_playwright
 
 
+def normalize_url(url: str):
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    return url
+
+
 def visit_with_retries(url, max_retries=5):
+    url = normalize_url(url)
+
     for attempt in range(max_retries):
         try:
             with sync_playwright() as p:
