@@ -104,7 +104,7 @@ if [ $WARM_CHROME = "true" ]; then
   playwright install chromium --only-shell
   for test_domain in $test_domains; do
     banner_echo "Testing Chrome $test_domain..."
-    /usr/bin/python "$GITHUB_ACTION_PATH/warm_playwright.py" "$test_domain"
+    /usr/bin/python "$GITHUB_ACTION_PATH/warm_chrome.py" "$test_domain"
   done
   /usr/bin/pip uninstall --yes playwright
 fi
