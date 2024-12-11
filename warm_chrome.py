@@ -1,9 +1,20 @@
+"""
+curl and chrome use different certificate stores.
+
+'Warming' the curl certificate store by requesting the URL does not warm the certs for Chrome.
+
+This seems insane that we need to do this, there must be some more deterministic way of handling this, but I could
+not find a better solution and this works pretty reliably.
+"""
+
 import sys
 import time
 from playwright.sync_api import sync_playwright
 
 
 def normalize_url(url: str):
+    "the URLs from localias do not have a scheme, so we need to add one"
+
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
     return url

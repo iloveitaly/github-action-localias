@@ -97,13 +97,17 @@ for test_domain in $test_domains; do
   $curl_success || exit 1
 done
 
-/usr/bin/pip install playwright
-playwright install chromium --only-shell
-for test_domain in $test_domains; do
-  banner_echo "Testing Chrome $test_domain..."
-  /usr/bin/python "$GITHUB_ACTION_PATH/warm_playwright.py" "$test_domain"
-done
-/usr/bin/pip uninstall --yes playwright
+if [ $WARM_CHROME = "true" ]; then
+  # abs path to py binaries in case mise or other version managers have a custom version of py installed
+  # we don't want to clobber than environment
+  /usr/bin/pip install playwright
+  playwright install chromium --only-shell
+  for test_domain in $test_domains; do
+    banner_echo "Testing Chrome $test_domain..."
+    /usr/bin/python "$GITHUB_ACTION_PATH/warm_playwright.py" "$test_domain"
+  done
+  /usr/bin/pip uninstall --yes playwright
+fi
 
 banner_echo "Tailing localias logs..."
 sudo tail -n 0 -f /root/.local/state/localias/daemon.log &

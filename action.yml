@@ -6,6 +6,12 @@ branding:
   icon: 'box'
   color: 'green'
 
+inputs:
+  chrome:
+    description: 'Warm the chromium database by visiting each host with a headless browser'
+    required: false
+    default: 'false'
+
 runs:
   using: 'composite'
   steps:
@@ -13,3 +19,5 @@ runs:
     - name: "Install & Run Localias"
       shell: bash
       run: "${{ github.action_path }}/entrypoint.sh"
+      env:
+        WARM_CHROME: ${{ inputs.chrome }}
