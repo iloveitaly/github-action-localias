@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 # Adapted from: https://starship.rs/install.sh
 
 set -eu pipefail
