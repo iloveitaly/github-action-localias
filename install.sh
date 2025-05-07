@@ -441,6 +441,12 @@ info "${BOLD}Arch${NO_COLOR}:          ${GREEN}${ARCH}${NO_COLOR}"
 if [ "${VERSION}" = "latest" ]; then
   info "Fetching latest version..."
   VERSION="$(get_latest_release)"
+  
+  if [ -z "${VERSION}" ]; then
+    error "Failed to fetch latest version"
+    exit 1
+  fi
+  
   info "Latest version is ${VERSION}"
 fi
 
