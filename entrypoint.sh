@@ -12,7 +12,7 @@ banner_echo() {
 if ! command -v localias >/dev/null & then
   # TODO use hosted version https://github.com/peterldowns/localias/pull/44
   banner_echo "Installing localias"
-  cat "$GITHUB_ACTION_PATH/install.sh" | sh -s -- --yes
+  cat "$GITHUB_ACTION_PATH/install.sh" | bash -s -- --yes
 fi
 
 # to view logs, run detached `sudo localaias run &`
