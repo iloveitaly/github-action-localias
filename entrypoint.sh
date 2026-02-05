@@ -15,19 +15,21 @@ if ! command -v localias >/dev/null; then
   cat "$GITHUB_ACTION_PATH/install.sh" | sh -s -- --yes
 fi
 
-LOCALIAS="localias"
+# Resolve absolute path to ensure sudo can always find the binary
+LOCALIAS_BIN=$(command -v localias)
+LOCALIAS_ARGS=()
 if [ -n "$LOCALIAS_CONFIG" ]; then
-  LOCALIAS="localias -c $LOCALIAS_CONFIG"
+  LOCALIAS_ARGS+=("-c" "$LOCALIAS_CONFIG")
 fi
 
 # to view logs, run detached `sudo localaias run &`
 banner_echo "Starting localias..."
-sudo $LOCALIAS start
+sudo "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" start
 
 # wait until the daemon has finished initializing
 # file is normally located at: /root/.local/state/localias/caddy/pki/authorities/local/root.crt
 
-cert_location=$(sudo $LOCALIAS debug cert)
+cert_location=$(sudo "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" debug cert)
 
 # this can occur if there was an error installing localias
 if [ -z "$cert_location" ]; then
@@ -60,7 +62,7 @@ banner_echo "Creating shared NSS DB..."
 
 # https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
 banner_echo "Installing certificates for Chrome and others using shared NSS DB..."
-sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo $LOCALIAS debug cert)
+sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" debug cert)
 
 banner_echo "Installed certificates:"
 certutil -L -d sql:${HOME}/.pki/nssdb
@@ -90,7 +92,7 @@ banner_echo "Datetime config..."
 timedatectl
 
 # each individual test domain should be tested/warmed up, otherwise downstream services may get an SSL error
-test_domains=$($LOCALIAS debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
+test_domains=$("$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
 
 for test_domain in $test_domains; do
   banner_echo "Testing $test_domain..."
