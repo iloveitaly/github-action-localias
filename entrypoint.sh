@@ -9,19 +9,25 @@ banner_echo() {
   printf "\n\033[0;36m%s   \033[0m\n" "$1"
 }
 
-if ! command -v localias >/dev/null & then
+if ! command -v localias >/dev/null; then
+  # TODO use hosted version https://github.com/peterldowns/localias/pull/44
   banner_echo "Installing localias"
   cat "$GITHUB_ACTION_PATH/install.sh" | sh -s -- --yes
 fi
 
+LOCALIAS="localias"
+if [ -n "$LOCALIAS_CONFIG" ]; then
+  LOCALIAS="localias -c $LOCALIAS_CONFIG"
+fi
+
 # to view logs, run detached `sudo localaias run &`
 banner_echo "Starting localias..."
-sudo localias start
+sudo $LOCALIAS start
 
 # wait until the daemon has finished initializing
 # file is normally located at: /root/.local/state/localias/caddy/pki/authorities/local/root.crt
 
-cert_location=$(sudo localias debug cert)
+cert_location=$(sudo $LOCALIAS debug cert)
 
 # this can occur if there was an error installing localias
 if [ -z "$cert_location" ]; then
@@ -54,7 +60,7 @@ banner_echo "Creating shared NSS DB..."
 
 # https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
 banner_echo "Installing certificates for Chrome and others using shared NSS DB..."
-sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo localias debug cert)
+sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo $LOCALIAS debug cert)
 
 banner_echo "Installed certificates:"
 certutil -L -d sql:${HOME}/.pki/nssdb
@@ -84,7 +90,7 @@ banner_echo "Datetime config..."
 timedatectl
 
 # each individual test domain should be tested/warmed up, otherwise downstream services may get an SSL error
-test_domains=$(localias debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
+test_domains=$($LOCALIAS debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
 
 for test_domain in $test_domains; do
   banner_echo "Testing $test_domain..."
@@ -96,7 +102,7 @@ for test_domain in $test_domains; do
   $curl_success || exit 1
 done
 
-if [ $WARM_CHROME = "true" ]; then
+if [ "$WARM_CHROME" = "true" ]; then
   # abs path to py binaries in case mise or other version managers have a custom version of py installed
   # we don't want to clobber than environment
   /usr/bin/pip install playwright

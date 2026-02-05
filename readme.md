@@ -9,7 +9,7 @@ This GitHub Action installs and configures [Localias](https://github.com/peterld
 - Installs and runs Localias as a daemon
 - Configures system CA certificates
 - Sets up NSS database for Chrome/Chromium compatibility (for playright, cypress, etc)
-- Validates HTTPS functionality with curl tests based on a domain in `.localias.yml`
+- Validates HTTPS functionality with curl tests based on domains in the configuration file
 
 ## Usage
 
@@ -17,6 +17,10 @@ This GitHub Action installs and configures [Localias](https://github.com/peterld
 ```yaml
 steps:
   - uses: iloveitaly/github-action-localias@master
+    with:
+      # Optional: path to a non-standard configuration file
+      # If not provided, localias will use the default .localias.yml
+      config: ./custom-localias.yml
 ```
 
 ## What it does
@@ -26,7 +30,7 @@ steps:
 3. Waits for self-signed certificate generation
 4. Refreshes system CA certificates
 5. Creates and configures NSS database for Chrome/Chromium
-6. Validates HTTPS setup with curl tests across all domains in `.localias.yml`
+6. Validates HTTPS setup with curl tests across all domains in the configuration file (.localias.yml by default)
 
 ## Development Notes
 
