@@ -16,12 +16,12 @@ fi
 
 # to view logs, run detached `sudo localaias run &`
 banner_echo "Starting localias..."
-sudo localias start
+sudo -E localias start
 
 # wait until the daemon has finished initializing
 # file is normally located at: /root/.local/state/localias/caddy/pki/authorities/local/root.crt
 
-cert_location=$(sudo localias debug cert)
+cert_location=$(sudo -E localias debug cert)
 
 # this can occur if there was an error installing localias
 if [ -z "$cert_location" ]; then
@@ -54,7 +54,7 @@ banner_echo "Creating shared NSS DB..."
 
 # https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
 banner_echo "Installing certificates for Chrome and others using shared NSS DB..."
-sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo localias debug cert)
+sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo -E localias debug cert)
 
 banner_echo "Installed certificates:"
 certutil -L -d sql:${HOME}/.pki/nssdb
@@ -70,7 +70,7 @@ sudo systemctl restart systemd-resolved
 # certs are *not* installed by Caddy in the right location by default
 # specifically, we know this fixes `curl` so it respects our self-signed SSL certificates
 # banner_echo "Installing locally signed cert"
-# sudo localias debug cert --print | sudo tee -a /etc/ssl/certs/ca-certificates.crt
+# sudo -E localias debug cert --print | sudo tee -a /etc/ssl/certs/ca-certificates.crt
 
 # https://stackoverflow.com/a/75352343/129415
 # TODO should we set this here? makes httpie work?
