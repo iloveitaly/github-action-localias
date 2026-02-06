@@ -13,10 +13,15 @@ This GitHub Action installs and configures [Localias](https://github.com/peterld
 
 ## Usage
 
-
 ```yaml
 steps:
   - uses: iloveitaly/github-action-localias@master
+    with:
+      # Optional: warm the chromium database by visiting each host with a headless browser
+      chrome: true
+    env:
+      # Optional: use a custom path to a localias configuration file
+      LOCALIAS_CONFIGFILE: .localias.yml
 ```
 
 ## What it does
