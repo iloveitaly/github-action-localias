@@ -11,9 +11,6 @@ inputs:
     description: 'Warm the chromium database by visiting each host with a headless browser'
     required: false
     default: 'false'
-  config:
-    description: 'The path to a non-standard configuration file'
-    required: false
 
 runs:
   using: 'composite'
@@ -24,4 +21,3 @@ runs:
       run: "${{ github.action_path }}/entrypoint.sh"
       env:
         WARM_CHROME: ${{ inputs.chrome }}
-        LOCALIAS_CONFIG: ${{ inputs.config }}
