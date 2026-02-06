@@ -22,14 +22,25 @@ if [ -n "$LOCALIAS_CONFIG" ]; then
   LOCALIAS_ARGS+=("-c" "$LOCALIAS_CONFIG")
 fi
 
+# Support mise-managed installations by sharing trust state with sudo
+# https://github.com/jdx/mise/issues/1126
+SUDO_CMD=(sudo)
+if command -v mise >/dev/null; then
+  SUDO_CMD+=(
+    "MISE_DATA_DIR=${MISE_DATA_DIR:-$HOME/.local/share/mise}"
+    "MISE_STATE_DIR=${MISE_STATE_DIR:-$HOME/.local/state/mise}"
+    "MISE_CONFIG_DIR=${MISE_CONFIG_DIR:-$HOME/.config/mise}"
+  )
+fi
+
 # to view logs, run detached `sudo localaias run &`
 banner_echo "Starting localias..."
-sudo "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" start
+"${SUDO_CMD[@]}" "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" start
 
 # wait until the daemon has finished initializing
 # file is normally located at: /root/.local/state/localias/caddy/pki/authorities/local/root.crt
 
-cert_location=$(sudo "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" debug cert)
+cert_location=$("${SUDO_CMD[@]}" "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" debug cert)
 
 # this can occur if there was an error installing localias
 if [ -z "$cert_location" ]; then
@@ -62,7 +73,7 @@ banner_echo "Creating shared NSS DB..."
 
 # https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
 banner_echo "Installing certificates for Chrome and others using shared NSS DB..."
-sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" debug cert)
+sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $("${SUDO_CMD[@]}" "$LOCALIAS_BIN" "${LOCALIAS_ARGS[@]}" debug cert)
 
 banner_echo "Installed certificates:"
 certutil -L -d sql:${HOME}/.pki/nssdb
