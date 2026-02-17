@@ -19,6 +19,8 @@ SUPPORTED_TARGETS="linux-amd64 linux-arm64 \
                    darwin-amd64 darwin-arm64 \
                    windows-amd64.exe windows-arm64.exe"
 
+CURL_RETRY_OPTS="--retry 3 --retry-all-errors --retry-delay 2"
+
 info() {
   printf '%s\n' "${BOLD}${GREY}>${NO_COLOR} $*"
 }
@@ -95,7 +97,7 @@ download() {
   fi
 
   if has curl && ! curl_is_snap; then
-    cmd="curl --fail --silent --location --output $file $url"
+    cmd="curl --fail --silent --location ${CURL_RETRY_OPTS} --output $file $url"
   elif has wget; then
     cmd="wget --quiet --output-document=$file $url"
   elif has fetch; then
@@ -239,7 +241,7 @@ detect_target() {
 
 get_latest_release() {
   if has curl; then
-    curl --fail --silent "https://api.github.com/repos/peterldowns/localias/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p'
+    curl --fail --silent ${CURL_RETRY_OPTS} "https://api.github.com/repos/peterldowns/localias/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p'
   elif has wget; then
     wget --quiet -O - "https://api.github.com/repos/peterldowns/localias/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p'
   else
@@ -458,6 +460,12 @@ printf '\n'
 URL="${BASE_URL}/download/${VERSION_ENCODED}/${FILENAME}"
 
 info "Download URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
+
+if has localias; then
+  info "localias is already installed at $(command -v localias), skipping installation"
+  exit 0
+fi
+
 confirm "Install localias ${GREEN}${VERSION}${NO_COLOR} to ${BOLD}${GREEN}${BIN_DIR}${NO_COLOR}?"
 check_bin_dir "${BIN_DIR}"
 
