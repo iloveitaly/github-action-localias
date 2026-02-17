@@ -24,15 +24,6 @@ steps:
       LOCALIAS_CONFIGFILE: .localias.yml
 ```
 
-## What it does
-
-1. Installs Localias if not present
-2. Starts Localias daemon
-3. Waits for self-signed certificate generation
-4. Refreshes system CA certificates
-5. Creates and configures NSS database for Chrome/Chromium
-6. Validates HTTPS setup with curl tests across all domains in `.localias.yml`
-
 ## Development Notes
 
 Getting this working was challenging:
@@ -44,6 +35,7 @@ Getting this working was challenging:
 * Installing `libnss3-tools` does not initialize the NSS DB. You must do this manually.
 * `curl` does not use the NSS DB but Chromium does.
 * `sudo localias debug cert --print | sudo tee -a /etc/ssl/certs/ca-certificates.crt` executes correctly with caddy, this is not necessary.
+* This struggles with mise-installed localias because of the mise trust database and the sudo requirement. This is why a custom installed localias is recommended.
 
 ### Helpful links
 
