@@ -13,7 +13,8 @@ banner_echo() {
 # This covers cases where it's not installed at all, or installed in a user-only shim path.
 if ! sudo -n -E localias --version >/dev/null 2>&1; then
   banner_echo "Installing localias"
-  cat "$GITHUB_ACTION_PATH/install.sh" | sh -s -- --yes
+  # Pass --base-url explicitly to avoid inheriting a BASE_URL env var from the CI environment.
+  cat "$GITHUB_ACTION_PATH/install.sh" | sh -s -- --yes --base-url "https://github.com/peterldowns/localias/releases"
 fi
 
 # to view logs, run detached `sudo localaias run &`
