@@ -461,8 +461,10 @@ URL="${BASE_URL}/download/${VERSION_ENCODED}/${FILENAME}"
 
 info "Download URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
 
-if has localias; then
-  info "localias is already installed at $(command -v localias), skipping installation"
+# Only skip if localias is on the path AND accessible via sudo (unless forced).
+# This ensures that mise/asdf shims don't cause us to skip if they aren't usable by root.
+if [ -z "${FORCE-}" ] && has localias && { ! has sudo || sudo -n -E localias --version >/dev/null 2>&1; }; then
+  info "localias already exists at $(command -v localias) and is sudo-accessible, skipping installation"
   exit 0
 fi
 

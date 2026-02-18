@@ -9,7 +9,9 @@ banner_echo() {
   printf "\n\033[0;36m%s   \033[0m\n" "$1"
 }
 
-if ! command -v localias >/dev/null & then
+# install localias if it's not accessible to sudo.
+# This covers cases where it's not installed at all, or installed in a user-only shim path.
+if ! sudo -n -E localias --version >/dev/null 2>&1; then
   banner_echo "Installing localias"
   cat "$GITHUB_ACTION_PATH/install.sh" | sh -s -- --yes
 fi
