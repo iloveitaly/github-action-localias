@@ -10,48 +10,36 @@ banner_echo() {
 }
 
 # sudo uses secure_path and does not keep the caller's PATH even with -E, so a
-# mise/user install is invisible to `sudo localias`. If localias is already on the
-# caller's PATH, link the real ELF into /usr/local/bin so sudo can find it.
-# Prefer `mise which` over `command -v`: mise shims resolve tools from $HOME, and
-# sudo sets HOME to /root, so linking a shim would still fail under sudo.
-if ! sudo -n -E localias --version >/dev/null 2>&1; then
-  binary=""
-  if command -v mise >/dev/null 2>&1; then
-    binary=$(mise which localias 2>/dev/null || true)
-  fi
-  if [ -z "$binary" ] || [ ! -x "$binary" ]; then
-    binary=$(command -v localias 2>/dev/null || true)
-  fi
-
-  if [ -n "$binary" ] && [ -x "$binary" ]; then
-    case "$binary" in
-      */mise/shims/*)
-        # Shim would still fail under sudo (HOME=/root); fall through to install.sh
-        banner_echo "Ignoring mise shim (not usable under sudo): $binary"
-        ;;
-      *)
-        banner_echo "Linking existing localias into /usr/local/bin: $binary"
-        sudo ln -sfn "$binary" /usr/local/bin/localias
-        ;;
-    esac
-  fi
-fi
-
-# install localias if it's still not accessible to sudo
-if ! sudo -n -E localias --version >/dev/null 2>&1; then
+# mise install is invisible to `sudo localias`. Prefer the absolute ELF from
+# `mise which` (not the shim — shims resolve via $HOME, and sudo sets HOME=/root)
+# instead of mutating /usr/local/bin.
+LOCALIAS=localias
+if sudo -n -E localias --version >/dev/null 2>&1; then
+  :
+elif command -v mise >/dev/null 2>&1 \
+  && mise_localias=$(mise which localias 2>/dev/null) \
+  && [ -n "$mise_localias" ] && [ -x "$mise_localias" ]; then
+  LOCALIAS=$mise_localias
+  banner_echo "Using mise localias: $LOCALIAS"
+else
   banner_echo "Installing localias"
   # Pass --base-url explicitly to avoid inheriting a BASE_URL env var from the CI environment.
   cat "$GITHUB_ACTION_PATH/install.sh" | sh -s -- --yes --base-url "https://github.com/peterldowns/localias/releases"
 fi
 
+if ! sudo -n -E "$LOCALIAS" --version >/dev/null 2>&1; then
+  banner_echo "ERROR: localias not executable via sudo: $LOCALIAS"
+  exit 1
+fi
+
 # to view logs, run detached `sudo localaias run &`
 banner_echo "Starting localias..."
-sudo -E localias start
+sudo -E "$LOCALIAS" start
 
 # wait until the daemon has finished initializing
 # file is normally located at: /root/.local/state/localias/caddy/pki/authorities/local/root.crt
 
-cert_location=$(sudo -E localias debug cert)
+cert_location=$(sudo -E "$LOCALIAS" debug cert)
 
 # this can occur if there was an error installing localias
 if [ -z "$cert_location" ]; then
@@ -84,7 +72,7 @@ banner_echo "Creating shared NSS DB..."
 
 # https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
 banner_echo "Installing certificates for Chrome and others using shared NSS DB..."
-sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo -E localias debug cert)
+sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo -E "$LOCALIAS" debug cert)
 
 banner_echo "Installed certificates:"
 certutil -L -d sql:${HOME}/.pki/nssdb
@@ -114,7 +102,7 @@ banner_echo "Datetime config..."
 timedatectl
 
 # each individual test domain should be tested/warmed up, otherwise downstream services may get an SSL error
-test_domains=$(localias debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
+test_domains=$("$LOCALIAS" debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
 
 for test_domain in $test_domains; do
   banner_echo "Testing $test_domain..."

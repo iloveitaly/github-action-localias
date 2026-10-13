@@ -35,7 +35,7 @@ Getting this working was challenging:
 * Installing `libnss3-tools` does not initialize the NSS DB. You must do this manually.
 * `curl` does not use the NSS DB but Chromium does.
 * `sudo localias debug cert --print | sudo tee -a /etc/ssl/certs/ca-certificates.crt` executes correctly with caddy, this is not necessary.
-* Mise-installed localias is invisible to `sudo` (`secure_path` + shim `$HOME` resolution). The entrypoint auto-detects a user-PATH install via `mise which` (real ELF, not the shim), links it into `/usr/local/bin`, and only runs `install.sh` if sudo still cannot find it.
+* Mise-installed localias is invisible to `sudo` (`secure_path` + shim `$HOME` resolution). If sudo cannot run `localias` but `mise which localias` returns a real ELF, the entrypoint uses that absolute path with `sudo` and skips `install.sh`.
 
 ### Helpful links
 
