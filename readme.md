@@ -24,19 +24,6 @@ steps:
       LOCALIAS_CONFIGFILE: .localias.yml
 ```
 
-### Using a mise-installed (or other preinstalled) binary
-
-`sudo` on Ubuntu uses `secure_path`, so a mise install is not visible to this action even with `sudo -E`. Pass the absolute path of the real ELF (not the mise shim — shims resolve tools from `$HOME`, and sudo sets `HOME` to `/root`):
-
-```yaml
-- id: localias
-  run: echo "path=$(mise which localias)" >> "$GITHUB_OUTPUT"
-- uses: iloveitaly/github-action-localias@master
-  with:
-    binary: ${{ steps.localias.outputs.path }}
-    chrome: true
-```
-
 ## Development Notes
 
 Getting this working was challenging:
@@ -48,7 +35,7 @@ Getting this working was challenging:
 * Installing `libnss3-tools` does not initialize the NSS DB. You must do this manually.
 * `curl` does not use the NSS DB but Chromium does.
 * `sudo localias debug cert --print | sudo tee -a /etc/ssl/certs/ca-certificates.crt` executes correctly with caddy, this is not necessary.
-* Mise-installed localias is invisible to `sudo` (`secure_path` + shim `$HOME` resolution). Prefer the `binary` input with `$(mise which localias)` (the real ELF, not the shim).
+* Mise-installed localias is invisible to `sudo` (`secure_path` + shim `$HOME` resolution). The entrypoint auto-detects a user-PATH install via `mise which` (real ELF, not the shim), links it into `/usr/local/bin`, and only runs `install.sh` if sudo still cannot find it.
 
 ### Helpful links
 

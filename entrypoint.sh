@@ -9,21 +9,35 @@ banner_echo() {
   printf "\n\033[0;36m%s   \033[0m\n" "$1"
 }
 
-# Optional: use an existing localias binary (e.g. from mise).
-# sudo uses secure_path and does not keep the caller's PATH even with -E, so a mise
-# install is invisible to `sudo localias`. mise shims also resolve tools from $HOME,
-# and sudo sets HOME to /root — pass the real ELF path, not the shim.
-if [ -n "${LOCALIAS_BINARY:-}" ]; then
-  if [ ! -x "$LOCALIAS_BINARY" ]; then
-    banner_echo "ERROR: binary input is missing or not executable: $LOCALIAS_BINARY"
-    exit 1
+# sudo uses secure_path and does not keep the caller's PATH even with -E, so a
+# mise/user install is invisible to `sudo localias`. If localias is already on the
+# caller's PATH, link the real ELF into /usr/local/bin so sudo can find it.
+# Prefer `mise which` over `command -v`: mise shims resolve tools from $HOME, and
+# sudo sets HOME to /root, so linking a shim would still fail under sudo.
+if ! sudo -n -E localias --version >/dev/null 2>&1; then
+  binary=""
+  if command -v mise >/dev/null 2>&1; then
+    binary=$(mise which localias 2>/dev/null || true)
   fi
-  banner_echo "Linking existing localias binary into /usr/local/bin..."
-  sudo ln -sfn "$LOCALIAS_BINARY" /usr/local/bin/localias
+  if [ -z "$binary" ] || [ ! -x "$binary" ]; then
+    binary=$(command -v localias 2>/dev/null || true)
+  fi
+
+  if [ -n "$binary" ] && [ -x "$binary" ]; then
+    case "$binary" in
+      */mise/shims/*)
+        # Shim would still fail under sudo (HOME=/root); fall through to install.sh
+        banner_echo "Ignoring mise shim (not usable under sudo): $binary"
+        ;;
+      *)
+        banner_echo "Linking existing localias into /usr/local/bin: $binary"
+        sudo ln -sfn "$binary" /usr/local/bin/localias
+        ;;
+    esac
+  fi
 fi
 
-# install localias if it's not accessible to sudo.
-# This covers cases where it's not installed at all, or installed in a user-only shim path.
+# install localias if it's still not accessible to sudo
 if ! sudo -n -E localias --version >/dev/null 2>&1; then
   banner_echo "Installing localias"
   # Pass --base-url explicitly to avoid inheriting a BASE_URL env var from the CI environment.
