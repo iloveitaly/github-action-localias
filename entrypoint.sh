@@ -9,6 +9,19 @@ banner_echo() {
   printf "\n\033[0;36m%s   \033[0m\n" "$1"
 }
 
+# Optional: use an existing localias binary (e.g. from mise).
+# sudo uses secure_path and does not keep the caller's PATH even with -E, so a mise
+# install is invisible to `sudo localias`. mise shims also resolve tools from $HOME,
+# and sudo sets HOME to /root — pass the real ELF path, not the shim.
+if [ -n "${LOCALIAS_BINARY:-}" ]; then
+  if [ ! -x "$LOCALIAS_BINARY" ]; then
+    banner_echo "ERROR: binary input is missing or not executable: $LOCALIAS_BINARY"
+    exit 1
+  fi
+  banner_echo "Linking existing localias binary into /usr/local/bin..."
+  sudo ln -sfn "$LOCALIAS_BINARY" /usr/local/bin/localias
+fi
+
 # install localias if it's not accessible to sudo.
 # This covers cases where it's not installed at all, or installed in a user-only shim path.
 if ! sudo -n -E localias --version >/dev/null 2>&1; then

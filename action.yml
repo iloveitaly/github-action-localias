@@ -11,6 +11,10 @@ inputs:
     description: 'Warm the chromium database by visiting each host with a headless browser'
     required: false
     default: 'false'
+  binary:
+    description: 'Absolute path to an existing localias executable (pass the real ELF, not a mise shim). When set, links it into /usr/local/bin and skips install.sh if sudo can run it.'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -21,3 +25,4 @@ runs:
       run: "${{ github.action_path }}/entrypoint.sh"
       env:
         WARM_CHROME: ${{ inputs.chrome }}
+        LOCALIAS_BINARY: ${{ inputs.binary }}
