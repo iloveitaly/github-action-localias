@@ -9,18 +9,18 @@ banner_echo() {
   printf "\n\033[0;36m%s   \033[0m\n" "$1"
 }
 
-# sudo uses secure_path and does not keep the caller's PATH even with -E, so a
-# mise install is invisible to `sudo localias`. Prefer the absolute ELF from
-# `mise which` (not the shim — shims resolve via $HOME, and sudo sets HOME=/root)
-# instead of mutating /usr/local/bin.
+# sudo uses secure_path and does not keep the caller's PATH even with -E, so
+# user-local installs (version managers, etc.) are invisible to `sudo localias`.
+# If we can resolve a real ELF (e.g. via mise which — not a shim, which breaks
+# under sudo because HOME=/root), use that absolute path instead of installing.
 LOCALIAS_BINARY_PATH=localias
 if sudo -n -E localias --version >/dev/null 2>&1; then
   :
 elif command -v mise >/dev/null 2>&1 \
-  && mise_localias=$(mise which localias 2>/dev/null) \
-  && [ -n "$mise_localias" ] && [ -x "$mise_localias" ]; then
-  LOCALIAS_BINARY_PATH=$mise_localias
-  banner_echo "Using mise localias: $LOCALIAS_BINARY_PATH"
+  && resolved_localias=$(mise which localias 2>/dev/null) \
+  && [ -n "$resolved_localias" ] && [ -x "$resolved_localias" ]; then
+  LOCALIAS_BINARY_PATH=$resolved_localias
+  banner_echo "Using existing localias: $LOCALIAS_BINARY_PATH"
 else
   banner_echo "Installing localias"
   # Pass --base-url explicitly to avoid inheriting a BASE_URL env var from the CI environment.
