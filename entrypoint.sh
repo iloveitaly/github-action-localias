@@ -9,22 +9,37 @@ banner_echo() {
   printf "\n\033[0;36m%s   \033[0m\n" "$1"
 }
 
-# install localias if it's not accessible to sudo.
-# This covers cases where it's not installed at all, or installed in a user-only shim path.
-if ! sudo -n -E localias --version >/dev/null 2>&1; then
+# sudo uses secure_path and does not keep the caller's PATH even with -E, so
+# user-local installs (version managers, etc.) are invisible to `sudo localias`.
+# If we can resolve a real ELF (e.g. via mise which — not a shim, which breaks
+# under sudo because HOME=/root), use that absolute path instead of installing.
+LOCALIAS_BINARY_PATH=localias
+if sudo -n -E localias --version >/dev/null 2>&1; then
+  :
+elif command -v mise >/dev/null 2>&1 \
+  && resolved_localias=$(mise which localias 2>/dev/null) \
+  && [ -n "$resolved_localias" ] && [ -x "$resolved_localias" ]; then
+  LOCALIAS_BINARY_PATH=$resolved_localias
+  banner_echo "Using existing localias: $LOCALIAS_BINARY_PATH"
+else
   banner_echo "Installing localias"
   # Pass --base-url explicitly to avoid inheriting a BASE_URL env var from the CI environment.
   cat "$GITHUB_ACTION_PATH/install.sh" | sh -s -- --yes --base-url "https://github.com/peterldowns/localias/releases"
 fi
 
+if ! sudo -n -E "$LOCALIAS_BINARY_PATH" --version >/dev/null 2>&1; then
+  banner_echo "ERROR: localias not executable via sudo: $LOCALIAS_BINARY_PATH"
+  exit 1
+fi
+
 # to view logs, run detached `sudo localaias run &`
 banner_echo "Starting localias..."
-sudo -E localias start
+sudo -E "$LOCALIAS_BINARY_PATH" start
 
 # wait until the daemon has finished initializing
 # file is normally located at: /root/.local/state/localias/caddy/pki/authorities/local/root.crt
 
-cert_location=$(sudo -E localias debug cert)
+cert_location=$(sudo -E "$LOCALIAS_BINARY_PATH" debug cert)
 
 # this can occur if there was an error installing localias
 if [ -z "$cert_location" ]; then
@@ -57,7 +72,7 @@ banner_echo "Creating shared NSS DB..."
 
 # https://chromium.googlesource.com/chromium/src/+/master/docs/linux/cert_management.md
 banner_echo "Installing certificates for Chrome and others using shared NSS DB..."
-sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo -E localias debug cert)
+sudo certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n localias-cert -i $(sudo -E "$LOCALIAS_BINARY_PATH" debug cert)
 
 banner_echo "Installed certificates:"
 certutil -L -d sql:${HOME}/.pki/nssdb
@@ -87,7 +102,7 @@ banner_echo "Datetime config..."
 timedatectl
 
 # each individual test domain should be tested/warmed up, otherwise downstream services may get an SSL error
-test_domains=$(localias debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
+test_domains=$("$LOCALIAS_BINARY_PATH" debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
 
 for test_domain in $test_domains; do
   banner_echo "Testing $test_domain..."
