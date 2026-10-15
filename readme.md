@@ -13,6 +13,8 @@ This GitHub Action installs and configures [Localias](https://github.com/peterld
 
 ## Usage
 
+Browser warmup (`chrome: true`) uses `uvx` when available to run Playwright in an isolated environment. Otherwise, it requires `python3` with pip and installs Playwright into that Python environment.
+
 ```yaml
 steps:
   - uses: iloveitaly/github-action-localias@master

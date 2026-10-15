@@ -83,7 +83,10 @@ banner_echo "Refreshing system CA certs..."
 sudo update-ca-certificates --fresh
 
 # reset DNS, could cause issues with custom domains
-sudo systemctl restart systemd-resolved
+if command -v systemctl >/dev/null &&
+  systemctl is-active --quiet systemd-resolved; then
+  sudo systemctl restart systemd-resolved
+fi
 
 # certs are *not* installed by Caddy in the right location by default
 # specifically, we know this fixes `curl` so it respects our self-signed SSL certificates
@@ -96,10 +99,6 @@ sudo systemctl restart systemd-resolved
 # export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 # export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 # export NODE_EXTRA_CA_CERTS="/path/to/cert.pem"
-
-# TODO leave this here in case we are able to identify a link between time drifts and cert issues
-banner_echo "Datetime config..."
-timedatectl
 
 # each individual test domain should be tested/warmed up, otherwise downstream services may get an SSL error
 test_domains=$("$LOCALIAS_BINARY_PATH" debug config --print | grep -v '^#' | grep -v '^$' | cut -d: -f1 | tr -d ' ')
@@ -114,16 +113,19 @@ for test_domain in $test_domains; do
   $curl_success || exit 1
 done
 
-if [ $WARM_CHROME = "true" ]; then
-  # abs path to py binaries in case mise or other version managers have a custom version of py installed
-  # we don't want to clobber than environment
-  /usr/bin/pip install playwright
-  playwright install chromium --only-shell
+if [ "${WARM_CHROME:-false}" = "true" ]; then
+  # Prefer uvx to avoid modifying the global Python environment.
+  if command -v uvx >/dev/null 2>&1; then
+    chrome_python=(uvx --from playwright python)
+  else
+    python3 -m pip install playwright
+    chrome_python=(python3)
+  fi
+  "${chrome_python[@]}" -m playwright install chromium --only-shell
   for test_domain in $test_domains; do
     banner_echo "Testing Chrome $test_domain..."
-    /usr/bin/python "$GITHUB_ACTION_PATH/warm_chrome.py" "$test_domain"
+    "${chrome_python[@]}" "$GITHUB_ACTION_PATH/warm_chrome.py" "$test_domain"
   done
-  /usr/bin/pip uninstall --yes playwright
 fi
 
 banner_echo "Tailing localias logs..."
