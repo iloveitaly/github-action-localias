@@ -144,7 +144,7 @@ if [ "$WARM_CHROME" = "true" ]; then
     chrome_python=(python3)
   fi
 
-  "${chrome_python[@]}" -m playwright install chromium --only-shell
+  "${chrome_python[@]}" -m playwright install chromium --with-deps --only-shell
 
   for test_domain in $test_domains; do
     banner_echo "Testing Chrome $test_domain..."
