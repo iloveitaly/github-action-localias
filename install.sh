@@ -1,7 +1,15 @@
 #!/usr/bin/env sh
+# Description: Download and install a Localias release for the detected platform and architecture.
 # Adapted from: https://starship.rs/install.sh
 
 set -eu
+
+# Environment defaults; platform and architecture detection runs after the helper definitions.
+PLATFORM=${PLATFORM:-}
+ARCH=${ARCH:-}
+BIN_DIR=${BIN_DIR:-/usr/local/bin}
+BASE_URL=${BASE_URL:-https://github.com/peterldowns/localias/releases}
+VERSION=${VERSION:-latest}
 
 printf '\n'
 
@@ -115,7 +123,7 @@ download() {
   info "If you would like to see a build for your configuration,"
   info "please create an issue requesting a build for ${MAGENTA}${TARGET}${NO_COLOR}:"
   info "${BOLD}${UNDERLINE}https://github.com/peterldowns/localias/issues/new/${NO_COLOR}"
-  return $rc
+  return "$rc"
 }
 
 install() {
@@ -241,13 +249,18 @@ detect_target() {
 
 get_latest_release() {
   if has curl; then
-    curl --fail --silent ${CURL_RETRY_OPTS} "https://api.github.com/repos/peterldowns/localias/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p'
+    # Intentionally split the shared curl options into separate arguments.
+    # shellcheck disable=SC2086
+    release_json=$(curl --fail --silent ${CURL_RETRY_OPTS} "https://api.github.com/repos/peterldowns/localias/releases/latest") || return $?
   elif has wget; then
-    wget --quiet -O - "https://api.github.com/repos/peterldowns/localias/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p'
+    release_json=$(wget --quiet -O - "https://api.github.com/repos/peterldowns/localias/releases/latest") || return $?
   else
     error "No HTTP download program (curl, wget) found, unable to fetch latest release"
     exit 1
   fi
+
+  # Propagate download failures before parsing; POSIX sh does not guarantee pipefail support.
+  printf '%s\n' "$release_json" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p'
 }
 
 url_encode() {
@@ -324,25 +337,13 @@ is_build_available() {
   fi
 }
 
-# defaults
-if [ -z "${PLATFORM-}" ]; then
+# Detect defaults that depend on helper functions.
+if [ -z "$PLATFORM" ]; then
   PLATFORM="$(detect_platform)"
 fi
 
-if [ -z "${BIN_DIR-}" ]; then
-  BIN_DIR="/usr/local/bin"
-fi
-
-if [ -z "${ARCH-}" ]; then
+if [ -z "$ARCH" ]; then
   ARCH="$(detect_arch)"
-fi
-
-if [ -z "${BASE_URL-}" ]; then
-  BASE_URL="https://github.com/peterldowns/localias/releases"
-fi
-
-if [ -z "${VERSION-}" ]; then
-  VERSION="latest"
 fi
 
 # Non-POSIX shells can break once executing code due to semantic differences
@@ -443,12 +444,12 @@ info "${BOLD}Arch${NO_COLOR}:          ${GREEN}${ARCH}${NO_COLOR}"
 if [ "${VERSION}" = "latest" ]; then
   info "Fetching latest version..."
   VERSION="$(get_latest_release)"
-  
+
   if [ -z "${VERSION}" ]; then
     error "Failed to fetch latest version"
     exit 1
   fi
-  
+
   info "Latest version is ${VERSION}"
 fi
 
