@@ -13,14 +13,11 @@ This GitHub Action installs and configures [Localias](https://github.com/peterld
 
 ## Usage
 
-Browser warmup (`chrome: true`) uses `uvx` when available to run Playwright in an isolated environment. Otherwise, it requires `python3` with pip and installs Playwright into that Python environment.
+Only the latest [Localias release](https://github.com/peterldowns/localias/releases/latest) is supported without browser warming (an issue in earlier versions required warming the Chrome certificate store with a headless browser, which has since been fixed). If you pre-install `localias` (e.g. via `mise`), ensure you are using the latest release.
 
 ```yaml
 steps:
   - uses: iloveitaly/github-action-localias@master
-    with:
-      # Optional: warm the chromium database by visiting each host with a headless browser
-      chrome: true
     env:
       # Optional: use a custom path to a localias configuration file
       LOCALIAS_CONFIGFILE: .localias.yml
