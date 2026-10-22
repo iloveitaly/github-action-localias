@@ -13,13 +13,14 @@ This GitHub Action installs and configures [Localias](https://github.com/peterld
 
 ## Usage
 
-Browser warmup (`chrome: true`) uses `uvx` when available to run Playwright in an isolated environment. Otherwise, it requires `python3` with pip and installs Playwright into that Python environment.
+Browser warmup (`chrome: true` or a WebSocket/CDP URL like `chrome: ws://localhost:9222/devtools/browser/...`) uses `uvx` when available to run Playwright in an isolated environment. Otherwise, it requires `python3` with pip and installs Playwright into that Python environment. When a WebSocket URL is provided instead of `true`, Chromium binary installation is skipped and Playwright connects to the existing browser instance.
 
 ```yaml
 steps:
   - uses: iloveitaly/github-action-localias@master
     with:
       # Optional: warm the chromium database by visiting each host with a headless browser
+      # Set to `true` to launch Chromium locally, or pass a WebSocket/CDP URL to use an existing browser
       chrome: true
     env:
       # Optional: use a custom path to a localias configuration file

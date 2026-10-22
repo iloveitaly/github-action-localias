@@ -135,7 +135,7 @@ for test_domain in $test_domains; do
   fi
 done
 
-if [ "$WARM_CHROME" = "true" ]; then
+if [ "$WARM_CHROME" != "false" ] && [ -n "$WARM_CHROME" ]; then
   # Prefer uvx to avoid modifying the global Python environment.
   if command -v uvx >/dev/null 2>&1; then
     chrome_python=(uvx --from playwright python)
@@ -144,7 +144,9 @@ if [ "$WARM_CHROME" = "true" ]; then
     chrome_python=(python3)
   fi
 
-  "${chrome_python[@]}" -m playwright install chromium --with-deps --only-shell
+  if [ "$WARM_CHROME" = "true" ]; then
+    "${chrome_python[@]}" -m playwright install chromium --with-deps --only-shell
+  fi
 
   for test_domain in $test_domains; do
     banner_echo "Testing Chrome $test_domain..."
