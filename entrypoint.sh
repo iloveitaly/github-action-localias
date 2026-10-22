@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Description: Start Localias, install its certificates, and validate configured HTTPS domains.
-# Optionally warm the Chromium certificate store with Playwright.
 
 set -v
 
@@ -8,7 +7,6 @@ set -v
 set -euo pipefail
 
 GITHUB_ACTION_PATH=${GITHUB_ACTION_PATH:?GITHUB_ACTION_PATH must point to the action directory}
-WARM_CHROME=${WARM_CHROME:-false}
 NSS_DB_PATH="$HOME/.pki/nssdb"
 LOCALIAS_BINARY_PATH=localias
 
@@ -134,23 +132,6 @@ for test_domain in $test_domains; do
     exit 1
   fi
 done
-
-if [ "$WARM_CHROME" = "true" ]; then
-  # Prefer uvx to avoid modifying the global Python environment.
-  if command -v uvx >/dev/null 2>&1; then
-    chrome_python=(uvx --from playwright python)
-  else
-    python3 -m pip install playwright
-    chrome_python=(python3)
-  fi
-
-  "${chrome_python[@]}" -m playwright install chromium --with-deps --only-shell
-
-  for test_domain in $test_domains; do
-    banner_echo "Testing Chrome $test_domain..."
-    "${chrome_python[@]}" "$GITHUB_ACTION_PATH/warm_chrome.py" "$test_domain"
-  done
-fi
 
 banner_echo "Tailing localias logs..."
 sudo tail -n 0 -f /root/.local/state/localias/daemon.log &
