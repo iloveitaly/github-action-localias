@@ -38,12 +38,6 @@ if ! sudo -n -E "$LOCALIAS_BINARY_PATH" --version >/dev/null 2>&1; then
   exit 1
 fi
 
-# `sudo -E` is not a reliable way to pass LOCALIAS_CONFIGFILE. sudoers
-# env_reset (and sudo-rs, which does not implement -E) drops variables that
-# are not named explicitly, so localias would ignore a custom config path.
-# --preserve-env=VAR keeps that one variable without preserving HOME/PATH.
-# If the variable is unset, sudo does not create it. An empty value is also
-# fine: localias treats "" the same as unset and uses its normal discovery.
 run_localias() {
   sudo --preserve-env=LOCALIAS_CONFIGFILE "$LOCALIAS_BINARY_PATH" "$@"
 }
