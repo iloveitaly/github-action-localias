@@ -42,12 +42,10 @@ fi
 # env_reset (and sudo-rs, which does not implement -E) drops variables that
 # are not named explicitly, so localias would ignore a custom config path.
 # --preserve-env=VAR keeps that one variable without preserving HOME/PATH.
+# If the variable is unset, sudo does not create it. An empty value is also
+# fine: localias treats "" the same as unset and uses its normal discovery.
 run_localias() {
-  if [ -n "${LOCALIAS_CONFIGFILE:-}" ]; then
-    sudo --preserve-env=LOCALIAS_CONFIGFILE "$LOCALIAS_BINARY_PATH" "$@"
-  else
-    sudo "$LOCALIAS_BINARY_PATH" "$@"
-  fi
+  sudo --preserve-env=LOCALIAS_CONFIGFILE "$LOCALIAS_BINARY_PATH" "$@"
 }
 
 # to view logs, run detached `sudo localaias run &`
