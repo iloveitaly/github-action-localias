@@ -38,14 +38,26 @@ if ! sudo -n -E "$LOCALIAS_BINARY_PATH" --version >/dev/null 2>&1; then
   exit 1
 fi
 
+# `sudo -E` is not a reliable way to pass LOCALIAS_CONFIGFILE. sudoers
+# env_reset (and sudo-rs, which does not implement -E) drops variables that
+# are not named explicitly, so localias would ignore a custom config path.
+# --preserve-env=VAR keeps that one variable without preserving HOME/PATH.
+run_localias() {
+  if [ -n "${LOCALIAS_CONFIGFILE:-}" ]; then
+    sudo --preserve-env=LOCALIAS_CONFIGFILE "$LOCALIAS_BINARY_PATH" "$@"
+  else
+    sudo "$LOCALIAS_BINARY_PATH" "$@"
+  fi
+}
+
 # to view logs, run detached `sudo localaias run &`
 banner_echo "Starting localias..."
-sudo -E "$LOCALIAS_BINARY_PATH" start
+run_localias start
 
 # wait until the daemon has finished initializing
 # file is normally located at: /root/.local/state/localias/caddy/pki/authorities/local/root.crt
 
-cert_location=$(sudo -E "$LOCALIAS_BINARY_PATH" debug cert)
+cert_location=$(run_localias debug cert)
 
 # this can occur if there was an error installing localias
 if [ -z "$cert_location" ]; then
@@ -103,7 +115,7 @@ fi
 # certs are *not* installed by Caddy in the right location by default
 # specifically, we know this fixes `curl` so it respects our self-signed SSL certificates
 # banner_echo "Installing locally signed cert"
-# sudo -E localias debug cert --print | sudo tee -a /etc/ssl/certs/ca-certificates.crt
+# sudo --preserve-env=LOCALIAS_CONFIGFILE localias debug cert --print | sudo tee -a /etc/ssl/certs/ca-certificates.crt
 
 # https://stackoverflow.com/a/75352343/129415
 # TODO should we set this here? makes httpie work?

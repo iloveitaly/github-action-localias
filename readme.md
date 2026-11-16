@@ -38,6 +38,7 @@ Getting this working was challenging:
 * `curl` does not use the NSS DB but Chromium does.
 * `sudo localias debug cert --print | sudo tee -a /etc/ssl/certs/ca-certificates.crt` executes correctly with caddy, this is not necessary.
 * User-local installs (e.g. via mise) can be invisible to `sudo` because of `secure_path`, and version-manager shims often break under sudo (`HOME` becomes `/root`). If sudo cannot run `localias` but a real binary path can be resolved (e.g. `mise which localias`), the entrypoint uses that absolute path with `sudo` and skips `install.sh`.
+* `LOCALIAS_CONFIGFILE` is forwarded with `sudo --preserve-env=LOCALIAS_CONFIGFILE`. `sudo -E` does not keep that variable when sudoers resets the environment, and sudo-rs does not implement `-E`.
 
 ### Helpful links
 
